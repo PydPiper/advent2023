@@ -20,10 +20,24 @@ treb7uchet
 In this example, the calibration values of these four lines are 12, 38, 15, and 77. Adding these together produces 142.
 
 Consider your entire calibration document. What is the sum of all of the calibration values?
+
+Your calculation isn't quite right. It looks like some of the digits are actually spelled out with letters: one, two, three, four, five, six, seven, eight, and nine also count as valid "digits".
+
+Equipped with this new information, you now need to find the real first and last digit on each line. For example:
+
+two1nine
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen
+In this example, the calibration values are 29, 83, 13, 24, 42, 14, and 76. Adding these together produces 281.
 '''
 
 import unittest
 from unittest import mock
+import re
 
 # yield line from file
 # loop fwd till you see a numeric
@@ -36,7 +50,7 @@ def yieldLineFromFile(filename:str) -> str:
         for line in f:
             yield line.strip()
 
-def main(filename:str) -> int:
+def mainPart1(filename:str) -> int:
     """time complexity O(lc) where, 
     l = number of lines in file
     c = number of char in line
@@ -64,34 +78,124 @@ def main(filename:str) -> int:
         total += num
     return total
 
+def mainPart2(filename:str) -> int:
+    """time complexity O(lc) where, 
+    l = number of lines in file
+    c = number of char in line
+    space complecity O(1)
+
+    :param filename: data file
+    :type filename: str
+    :return: sum of each line's 1st and last numeric value
+    :rtype: int
+    """
+    total = 0
+
+    char2num = {
+        'one': '1',
+        'two': '2',
+        'three': '3',
+        'four': '4',
+        'five': '5',
+        'six': '6',
+        'seven': '7',
+        'eight': '8',
+        'nine': '9'
+    }
+
+    char2numBackwards = {k[::-1]:v for k, v in char2num.items()}
+
+
+    char2numRegEx = re.compile('(' + '|'.join(char2num.keys()) + ')', re.IGNORECASE)
+    char2numRegExBackwards = re.compile('(' + '|'.join(char2numBackwards.keys()) + ')', re.IGNORECASE)
+    with open('1convert.data', 'w') as f:
+        for line in yieldLineFromFile(filename):
+            char1 = ''
+            char2 = ''
+            templine = re.sub(char2numRegEx, lambda match: char2num[match.group().lower()], line)
+            f.write(line + '\n')
+            for char in templine:
+                if char.isnumeric():
+                    char1 = char
+                    break
+            templine = re.sub(char2numRegExBackwards, lambda match: char2numBackwards[match.group().lower()], line[::-1])
+            for char in templine:
+                if char.isnumeric():
+                    char2 = char
+                    break
+            num = int(char1 + char2)
+            total += num
+    return total
+
 class TestMain(unittest.TestCase):
 
-    def test_Main(self):
+    def test_MainPart1(self):
 
         with mock.patch('__main__.yieldLineFromFile', return_value=['1']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(11, rv)
         with mock.patch('__main__.yieldLineFromFile', return_value=['12']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(12, rv)
         with mock.patch('__main__.yieldLineFromFile', return_value=['1','12']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(23, rv)
         with mock.patch('__main__.yieldLineFromFile', return_value=['1223']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(13, rv)
         with mock.patch('__main__.yieldLineFromFile', return_value=['a1']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(11, rv)
         with mock.patch('__main__.yieldLineFromFile', return_value=['2a']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(22, rv)
         with mock.patch('__main__.yieldLineFromFile', return_value=['1av4']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(14, rv)
         with mock.patch('__main__.yieldLineFromFile', return_value=['ca1av4z']):
-            rv = main('fake.data')
+            rv = mainPart1('fake.data')
             self.assertEqual(14, rv)
+
+    def test_MainPart2(self):
+
+        with mock.patch('__main__.yieldLineFromFile', return_value=['one']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(11, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=['onetwo']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(12, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=['one','onetwo']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(23, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=['onetwo2three']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(13, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=['afour']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(44, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=['fivea']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(55, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=['sixavseven']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(67, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=['caeightavninez']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(89, rv)
+        # overlap edge case where replace start from the beginning so two -> 2 at the end when it should be 1
+        with mock.patch('__main__.yieldLineFromFile', return_value=['honemkmbfbnlhtbq19twonekbp']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(11, rv)
+        with mock.patch('__main__.yieldLineFromFile', return_value=
+                        ['two1nine',
+                         'eightwothree',
+                         'abcone2threexyz',
+                         'xtwone3four',
+                         '4nineeightseven2',
+                         'zoneight234',
+                         '7pqrstsixteen']):
+            rv = mainPart2('fake.data')
+            self.assertEqual(281, rv)
 
 if __name__ == '__main__':
     FILENAME = '1.data'
@@ -100,4 +204,4 @@ if __name__ == '__main__':
     if RUNTEST:
         unittest.main()
     else:
-        print(main(FILENAME))
+        print(mainPart2(FILENAME))
